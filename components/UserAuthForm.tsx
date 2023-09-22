@@ -15,6 +15,11 @@ import {
 import { Input } from "@/components/ui/input";
 import { Button } from "./ui/button";
 import { useRouter } from "next/navigation";
+import { useLayoutEffect, useState } from "react";
+import { useGlobalContext } from "@/app/context/store";
+import Icons from "./Icons";
+import { SIGNIN } from "@/app/constants";
+import { getItem, setItem } from "@/lib/utils";
 
 const formSchema = z.object({
   username: z.string().min(1, {
@@ -26,8 +31,11 @@ const formSchema = z.object({
 });
 
 export default function UserAuthForm() {
+  const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
-  // 1. Define your form.
+
+  const { username, isLogin, setUsername, setIsLogin } = useGlobalContext();
+
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -38,9 +46,20 @@ export default function UserAuthForm() {
 
   // 2. Define a submit handler.
   function onSubmit(values: z.infer<typeof formSchema>) {
-    console.log(values);
-    router.push("/home");
+    setIsLoading(true);
+    setTimeout(() => {
+      setUsername(values.username);
+      setIsLogin(true);
+      router.push("/home");
+    }, 1000);
   }
+
+  useLayoutEffect(() => {
+    if (isLogin) {
+      router.push("/home");
+    }
+  }, [isLogin, router]);
+
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
@@ -51,7 +70,7 @@ export default function UserAuthForm() {
             <FormItem>
               <FormLabel>Username</FormLabel>
               <FormControl>
-                <Input placeholder="shadcn" {...field} />
+                <Input placeholder="Username" {...field} disabled={isLoading} />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -64,13 +83,16 @@ export default function UserAuthForm() {
             <FormItem>
               <FormLabel>Password</FormLabel>
               <FormControl>
-                <Input placeholder="Password" {...field} />
+                <Input placeholder="Password" {...field} disabled={isLoading} />
               </FormControl>
               <FormMessage />
             </FormItem>
           )}
         />
-        <Button type="submit">Submit</Button>
+        <Button className="w-full" type="submit" disabled={isLoading}>
+          {isLoading && <Icons.spinner className="animate-spin mr-2 h-4 w-4" />}
+          {SIGNIN}
+        </Button>
       </form>
     </Form>
   );
